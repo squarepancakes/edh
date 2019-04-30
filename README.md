@@ -42,6 +42,8 @@ You should be able to access the sample application via the following URL:
 
 ### v1.0.0 APIs (LATEST)
 
+[EDH Entity TUO Specifications](https://public.cloud.myinfo.gov.sg/edh/edh-tuo-specs.html)
+
 **For Linux/MacOS**
 
 Edit the `start.sh`. Look for `SANDBOX ENVIRONMENT`, Comment out these configurations,
