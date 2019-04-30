@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Sample Application</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link href="https://fonts.googleapis.com/css?family=Merriweather:300,400%7CPoppins:400,500,600" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="../../vendor/bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="../../css/main.css">
+	<link href="../../vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+	<script src="/components/jquery/jquery.min.js"></script>
+	<script src="/components/jquery/purl.js"></script>
+	<script src="/components/tether/js/tether.min.js"></script>
+
+	<script>
+		// SETUP VARIABLES
+    var scrollToAppForm = false;
+
+    var clientId; // your app_id/client_id provided to you during onboarding
+    var redirectUrl; //callback url for your application
+
+    var attributes; // the attributes you are retrieving for your application to fill the form
+    var authLevel; // the auth level, determines the flow
+    // the purpose of your data retrieval
+    var purpose = "demonstrating EDH Entity API";
+
+    window.onload = function(e) {
+      // invoke AJAX call to get the clientId & redirectURL from serverside
+      $.ajax({
+        url: "/getEnv",
+        data: {},
+        type: "GET", // get from serverside
+        success: function(data) {
+          // successful response from serverside
+          if (data.status == "OK") { // successful
+            // fill up the application form
+            clientId = data.clientId;
+            redirectUrl = data.redirectUrl;
+            authApiUrl = data.authApiUrl;
+            attributes = data.attributes;
+            authLevel = data.authLevel;
+          } else {
+            // error occured
+            alert("ERROR:" + JSON.stringify(data.msg));
+          }
+
+        }
+      });
+    }
+
+    // main function for handling form events
+    $(function() {
+
+      $("#formAuthorise").submit(function(event) {
+        event.preventDefault();
+				callEntityAPI();
+				$('#form').toggleClass('hidden');
+				$('html, body').animate({
+					scrollTop: $("#form").offset().top
+				}, 500);
+      });
+      $("#formApplication").submit(function(event) {
+        event.preventDefault();
+        // add code here to submit the application form back to server for processing
+        $('#complete').toggleClass('hidden');
+      });
+
+    });
+
+		function callEntityAPI() {
+			var uen = document.getElementById("input_uen").value;
+
+			$.ajax({
+				url: "/getEntityData",
+				data: {
+					uen: uen
+				},
+				type: "POST",
+				success: function (data) {
+					if (data.status == "OK") {
+						prefillForm(data.text);
+					} else {
+						alert("ERROR:"+JSON.stringify(data.msg));
+					}
+				}
+			})
+		}
+    // Prefill Online Form with EDH data
+    function prefillForm(data) {
+      // prefill form data
+      var formValues = null;
+
+      var formValues = {
+        // entity details
+        "uen": data['basic-profile']['uen']['value'],
+        "entity-name": data['basic-profile']['entity-name']['value'],
+        "entity-type": data['basic-profile']['entity-type']['desc'],
+        "business-expiry-date": data['basic-profile']['business-expiry-date'],
+        "primary-ssic": toStr(data, 'PRIMARYSSIC'),
+        "secondary-ssic": toStr(data, 'SECONDARYSSIC'),
+        "enregadd": toStr(data, 'ENTITYADDRESS')
+
+      };
+			if (data['basic-profile'].hasOwnProperty('entity-status')) {
+				formValues["entity-status"] = data['basic-profile']['entity-status']['desc'];
+			};
+			if (data['basic-profile'].hasOwnProperty('registration-date')) {
+				formValues["registration-date"] = data['basic-profile']['registration-date']['value'];
+			};
+			if (data['basic-profile'].hasOwnProperty('expiry-date')) {
+				formValues["business-expiry-date"] = data['basic-profile']['expiry-date']['value'];
+			};
+
+			if (data['appointments'].length > 0){
+				if (data['entitytype'] != 'OE') {
+					formValues["position"]= data['appointments'][0]['position']['desc'],
+					formValues["appoint-date"]= data['appointments'][0]['appointed-date']['value']
+				}
+				else {
+					formValues["position"] = data['appointments'][0]['designation']['value']
+				}
+				if (data['appointments'][0].hasOwnProperty('appointed-person')) {
+					formValues["appoint-ic-uen"]= data['appointments'][0]['appointed-person']['id-no']['value'],
+					formValues["appoint-name"]= data['appointments'][0]['appointed-person']['name']['value']
+				}
+				else if (data['appointments'][0].hasOwnProperty('appointed-entity')) {
+					formValues["appoint-ic-uen"]= data['appointments'][0]['appointed-entity']['uen']['value'],
+					formValues["appoint-name"]= data['appointments'][0]['appointed-entity']['name']['value']
+				}
+			}
+
+      // Populate values
+      populate('#formApplication', formValues);
+
+    }
+
+    // CALLBACK HANDLER
+    if (this.location.href.indexOf("callback?") > -1) {
+
+      // call the backend server APIs
+			callEntityAPI();
+    }
+
+    function populate(frm, data) {
+      $.each(data, function(key, value) {
+        $('[name=' + key + ']', frm).val(value);
+        $('[name=' + key + ']', frm).prop('disabled', true);
+      });
+			scrollToAppForm = true;
+    }
+
+    function toStr(data, type) {
+      if (data == undefined)
+        return null;
+
+      if (type == 'PRIMARYSSIC') {
+				if (data['basic-profile'].hasOwnProperty('primary-activity')) {
+        	var val = data['basic-profile']['primary-activity']['code'] + " - " + data['basic-profile']['primary-activity']['desc']
+        	return val;
+				}
+				else {
+					return "";
+				}
+      } else if (type == 'SECONDARYSSIC') {
+				if (data['basic-profile'].hasOwnProperty('secondary-activity')) {
+	        var val = data['basic-profile']['secondary-activity']['code'] + " - " + data['basic-profile']['secondary-activity']['desc'];
+	        return val;
+				}
+				else {
+					return "";
+				}
+      } else if (type == 'ENTITYADDRESS') {
+        var val = "";
+        var add =  data['addresses'];
+        if (add[0] !== undefined) {
+          add = add[0];
+        }
+        var addresstype = add['addresstype'];
+        if (addresstype == 'SG') {
+          if (add.block !== undefined && add.block != "")
+            val = val + "BLK " + add.block.value;
+          if (add.building !== undefined && add.building != "")
+            val = val + " " + add.building.value;
+          if (add.floor !== undefined && add.floor != "")
+            val = val + " " + add.floor.value;
+          if (add.unit !== undefined && add.unit != "")
+            val = val + "-" + add.unit.value;
+          if (add.street !== undefined && add.street != "")
+            val = val + " " + add.street.value;
+          if (add.postal !== undefined && add.postal != "")
+            val = val + " S(" + add.postal.value + ")";
+        } else {
+          if (add['line-1'] !== undefined && add['line-1'] != "")
+            val = val + add['line1'].value;
+          if (add['line-2'] !== undefined && add['line-2'] != "")
+            val = val + add['line2'].value;
+        }
+        return val;
+      } else {
+        return null;
+      }
+    }
+  </script>
+
+</head>
+
+<body class="EDH">
+	<section class="hero-area">
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-6 col-md-6 d-flex align-items-center full-screen-height">
+					<div class="hero-content-div">
+						<div class="hero-content">
+							<h1 class="mt-0">G2B Tell-Us-Once Sample Application</h1>
+							<p>This demo is an example of how your application should integrate with EDH.</p>
+							<br>
+							<p>Once the user has logged in via <b>CorpPass</b>, you can invoke <b>EDH Entity API</b> with the UEN logged in to pre-fill the digital service forms.</p>
+							<hr>
+							<p>To start the data retrieval process, select an entity from the dropdown menu and click on the "Retrieve Entity" button below.</p>
+						</div>
+						<div class="row" style="margin-bottom:15px">
+							<div class="col-sm-9">
+								<div class="select-wrapper">
+									<i class="fa fa-angle-down"></i>
+									<select id="input_uen" class="form-control" name="entry" required="">
+										<option value="201800001A">201800001A - Local Company</option>
+										<option value="T18FC0001A">T18FC0001A - Foreign Company</option>
+										<option value="12345678A">12345678A - Business</option>
+										<option value="T18PF0001A">T18PF0001A - Public Accounting Firm</option>
+										<option value="T18UF0001A">T18UF0001A - Unregistered Foreign</option>
+										<option value="T18UL0001A">T18UL0001A - Unregistered Local</option>
+										<option value="T18LP0001A">T18LP0001A - Limited Partnership</option>
+										<option value="T18LL0001A">T18LL0001A - Limited Liability Partnership</option>
+										<option value="T18SS0001A">T18SS0001A - Society</option>
+										<option value="T18AF0001A">T18AF0001A - Audit Firm</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<form id="formAuthorise">
+							<a href="#" onclick="$(this).closest('form').submit()" class="btn2">Retrieve Entity</a>
+						</form>
+					</div>
+				</div>
+				<div class="col-lg-6 col-md-6 d-flex align-items-center full-screen-height mobile-hidden">
+					<div class="right-img">
+						<div data-depth="0.40" class="layer">
+							<div class="right-img-bg-1"></div>
+						</div>
+						<div data-depth="0.30" class="layer">
+							<div class="right-img-bg-2"></div>
+						</div>
+						<div data-depth="0.40" class="layer">
+							<img class="right-img-img" src="../../images/banner-edh.png" alt="">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<a href="#form" class="form-link">
+		<p>form below</p>
+	</a>
+
+	<section id="form" class="lone-about-us section-padding">
+		<form id="formApplication" class="toggle_content">
+			<div class="container">
+				<div class="single-heading">
+					<h2>Form</h2>
+					<h4>Application pre-filled with EDH!</h4>
+				</div>
+				<div class="row">
+					<div class="col-md-12 mb-4">
+						<p style="text-align:center;">Confirm your details below and click "Submit Application".</p>
+					</div>
+				</div>
+				<div class="row justify-content-around">
+					<div class="col-md-12 col-lg-5 form-box mb-4">
+						<h3>Corporate Information</h3>
+						<hr>
+						<div class="form-group">
+							<label>UEN</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="uen" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Entity Name</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="entity-name" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Entity Type</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="entity-type" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Entity Status</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="entity-status" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Registered Address</label>
+							<div class="input-group">
+								<textarea cols="50" rows="3" name="enregadd"></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Registration Date</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="registration-date" placeholder="" required="">
+							</div>
+						</div>
+						<hr>
+						<div class="form-group">
+							<label>Primary SSIC</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="primary-ssic" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Secondary SSIC</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="secondary-ssic" placeholder="" required="">
+							</div>
+						</div>
+						<hr>
+						<div class="form-group">
+							<label>Appointment 1 - Position</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="position" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Appointment 1 - NRIC/UEN</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="appoint-ic-uen" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Appointment 1 - Full Name</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="appoint-name" placeholder="" required="">
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Appointment 1 - Appointment Date</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="appoint-date" placeholder="" required="">
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12 text-center">
+						<a href="#" class="btn2">Submit Application</a>
+					</div>
+				</div>
+			</div>
+		</form>
+	</section>
+
+	<script src="../../vendor/jquery/jquery-3.3.1.min.js"></script>
+	<script src="../../vendor/jquery.scrollTo.min.js"></script>
+	<script src="../../js/main.js"></script>
+	<!-- jQuery -->
+	<script src="components/jquery/jquery.min.js"></script>
+
+	<!-- Bootstrap Core JavaScript -->
+	<script src="components/bootstrap/js/bootstrap.min.js"></script>
+
+	<!-- Plugin JavaScript -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+	<script src="components/scrollreveal/scrollreveal.min.js"></script>
+	<script src="components/magnific-popup/jquery.magnific-popup.min.js"></script>
+
+	<!-- Theme JavaScript -->
+	<script src="js/creative.js"></script>
+	<script>
+		// this needs to be at the bottom of the page so that the page scrolling can work
+		if (scrollToAppForm == true) {
+			// scroll to application form
+			$('#form').toggleClass('hidden');
+			$('html, body').animate({
+				scrollTop: $("#form").offset().top
+			}, 500);
+		}
+	</script>
+
+</body>
+
+</html>
