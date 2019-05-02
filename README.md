@@ -84,4 +84,4 @@ Execute the following command to start the application:
 
 ## Reporting issues
 
-You may contact <mailto:support@myinfo.gov.sg> for any other technical issues, and we will respond to you within 5 working days.
+You may contact <mailto:support@edh.gov.sg> for any other technical issues, and we will respond to you within 5 working days.
