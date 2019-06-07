@@ -24,8 +24,6 @@ var _publicCertContent = process.env.EDH_SIGNATURE_CERT_PUBLIC_CERT;
 var _privateKeyContent = process.env.DEMO_APP_SIGNATURE_CERT_PRIVATE_KEY;
 // LOADED FRON ENV VARIABLE: your client_id provided to you during onboarding
 var _clientId = process.env.EDH_APP_CLIENT_ID;
-// LOADED FRON ENV VARIABLE: your client_secret provided to you during onboarding
-//var _clientSecret = process.env.EDH_APP_CLIENT_SECRET;
 // redirect URL for your web application
 var _redirectUrl = process.env.EDH_APP_REDIRECT_URL;
 
