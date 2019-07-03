@@ -1,4 +1,4 @@
-## MyInfoBiz Demo App Setup
+## EDH Demo App Setup
 
 ### 1.1 Install Node and NPM
 
