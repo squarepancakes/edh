@@ -13,6 +13,4 @@ export EDH_APP_REDIRECT_URL=http://localhost:3001/callback
 export AUTH_LEVEL=L2
 export EDH_API_ENTITY='https://test.api.edh.gov.sg/gov/v1/entity'
 
-#export EDH_API_ENTITY='https://api.edh.gov.sg/gov/v1/entity'
-
 npm start
