@@ -78,11 +78,11 @@
 					uen: uen
 				},
 				type: "POST",
-				success: function (data) {
-					if (data.status == "OK") {
-						prefillForm(data.text);
+				success: function (formdata) {
+					if (formdata.status == "OK") {
+						prefillForm(formdata.text);
 					} else {
-						alert("ERROR:"+JSON.stringify(data.msg));
+						alert("ERROR:"+JSON.stringify(formdata.msg));
 					}
 				}
 			})
