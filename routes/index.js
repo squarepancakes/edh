@@ -89,7 +89,7 @@ function callEntityAPI(uen, res) {
       if (callErr) {
         console.log("Error from Entity API:".red);
         console.log(callErr.status);
-        console.log(callErr.response.req.res.text);
+        console.log(callErr.response);
         res.jsonp({
           status: "ERROR",
           msg: callErr
