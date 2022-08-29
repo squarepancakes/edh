@@ -1,6 +1,10 @@
-export EDH_APP_CLIENT_ID=STG2-EDH-SELF-TEST
-export DEMO_APP_SIGNATURE_CERT_PRIVATE_KEY=./ssl/STG2-EDH-SELF-TEST.pem
-export EDH_SIGNATURE_CERT_PUBLIC_CERT=./ssl/staging_myinfo_public_cert.cer
+# export EDH_APP_CLIENT_ID=STG2-EDH-SELF-TEST
+# export DEMO_APP_SIGNATURE_CERT_PRIVATE_KEY=./ssl/STG2-EDH-SELF-TEST.pem
+# export EDH_SIGNATURE_CERT_PUBLIC_CERT=./ssl/staging_myinfo_public_cert.cer
+
+export EDH_APP_CLIENT_ID=STG-WSG-MCF
+export DEMO_APP_SIGNATURE_CERT_PRIVATE_KEY=./ssl/edh.key
+export EDH_SIGNATURE_CERT_PUBLIC_CERT=./ssl/edh.crt
 
 export EDH_APP_REDIRECT_URL=http://localhost:3001/callback
 

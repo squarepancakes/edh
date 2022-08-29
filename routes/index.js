@@ -34,7 +34,8 @@ var _entityApiUrl = process.env.EDH_API_ENTITY;
 
 // Requested attributes
 
-var _attributes = "entitytype,basic-profile,addresses,history,financials,capitals,declarations,charges,shareholders,appointments,licences,grants"
+var _attributes = "basic-profile"
+// var _attributes = "entitytype,basic-profile,addresses,history,financials,capitals,declarations,charges,shareholders,appointments,licences,grants"
 
 
 
