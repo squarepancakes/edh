@@ -100,7 +100,7 @@
         "business-expiry-date": data['basic-profile']['business-expiry-date'],
         "primary-ssic": toStr(data, 'PRIMARYSSIC'),
         "secondary-ssic": toStr(data, 'SECONDARYSSIC'),
-        "enregadd": toStr(data, 'ENTITYADDRESS')
+    
 
       };
 			if (data['basic-profile'].hasOwnProperty('entity-status')) {
@@ -113,23 +113,7 @@
 				formValues["business-expiry-date"] = data['basic-profile']['expiry-date']['value'];
 			};
 
-			if (data['appointments'].length > 0){
-				if (data['entitytype'] != 'OE') {
-					formValues["position"]= data['appointments'][0]['position']['desc'],
-					formValues["appoint-date"]= data['appointments'][0]['appointed-date']['value']
-				}
-				else {
-					formValues["position"] = data['appointments'][0]['designation']['value']
-				}
-				if (data['appointments'][0].hasOwnProperty('appointed-person')) {
-					formValues["appoint-ic-uen"]= data['appointments'][0]['appointed-person']['id-no']['value'],
-					formValues["appoint-name"]= data['appointments'][0]['appointed-person']['name']['value']
-				}
-				else if (data['appointments'][0].hasOwnProperty('appointed-entity')) {
-					formValues["appoint-ic-uen"]= data['appointments'][0]['appointed-entity']['uen']['value'],
-					formValues["appoint-name"]= data['appointments'][0]['appointed-entity']['name']['value']
-				}
-			}
+			
 
       // Populate values
       populate('#formApplication', formValues);
@@ -171,33 +155,6 @@
 				else {
 					return "";
 				}
-      } else if (type == 'ENTITYADDRESS') {
-        var val = "";
-        var add =  data['addresses'];
-        if (add[0] !== undefined) {
-          add = add[0];
-        }
-        var addresstype = add['addresstype'];
-        if (addresstype == 'SG') {
-          if (add.block !== undefined && add.block != "")
-            val = val + "BLK " + add.block.value;
-          if (add.building !== undefined && add.building != "")
-            val = val + " " + add.building.value;
-          if (add.floor !== undefined && add.floor != "")
-            val = val + " " + add.floor.value;
-          if (add.unit !== undefined && add.unit != "")
-            val = val + "-" + add.unit.value;
-          if (add.street !== undefined && add.street != "")
-            val = val + " " + add.street.value;
-          if (add.postal !== undefined && add.postal != "")
-            val = val + " S(" + add.postal.value + ")";
-        } else {
-          if (add['line-1'] !== undefined && add['line-1'] != "")
-            val = val + add['line1'].value;
-          if (add['line-2'] !== undefined && add['line-2'] != "")
-            val = val + add['line2'].value;
-        }
-        return val;
       } else {
         return null;
       }
@@ -331,30 +288,7 @@
 							</div>
 						</div>
 						<hr>
-						<div class="form-group">
-							<label>Appointment 1 - Position</label>
-							<div class="input-group">
-								<input type="text" class="form-control" name="position" placeholder="" required="">
-							</div>
-						</div>
-						<div class="form-group">
-							<label>Appointment 1 - NRIC/UEN</label>
-							<div class="input-group">
-								<input type="text" class="form-control" name="appoint-ic-uen" placeholder="" required="">
-							</div>
-						</div>
-						<div class="form-group">
-							<label>Appointment 1 - Full Name</label>
-							<div class="input-group">
-								<input type="text" class="form-control" name="appoint-name" placeholder="" required="">
-							</div>
-						</div>
-						<div class="form-group">
-							<label>Appointment 1 - Appointment Date</label>
-							<div class="input-group">
-								<input type="text" class="form-control" name="appoint-date" placeholder="" required="">
-							</div>
-						</div>
+					
 					</div>
 					<div class="col-md-12 text-center">
 						<a href="#" class="btn2">Submit Application</a>
