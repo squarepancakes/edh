@@ -134,11 +134,11 @@ function callEntityAPI(uen, res) {
                     msg: "INVALID DATA OR SIGNATURE FOR ENTITY DATA"
                   });
 
-                console.log("Entity Data (JWS):".green);
-                console.log(JSON.stringify(entityData));
+                  console.log("Entity Data (JWS):".green);
+                  console.log(JSON.stringify(entityData));
 
-                var decodedEntityData = securityHelper.verifyJWS(entityData, _publicCertContent);
-
+                  var decodedEntityData = securityHelper.verifyJWS(entityData, _publicCertContent);
+                  
                 if (decodedEntityData == undefined || decodedEntityData == null) {
                   res.jsonp({
                     status: "ERROR",
@@ -196,6 +196,7 @@ function createEntityRequest(uen) {
     _clientId,
     _privateKeyContent
   );
+console.log('AuthHeaders'.green, authHeaders)
   if (!_.isEmpty(authHeaders)) {
     _.set(headers, "Authorization", authHeaders);
   }
