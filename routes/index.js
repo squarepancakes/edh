@@ -1,18 +1,17 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 
-const restClient = require('superagent-bluebird-promise');
-const path = require('path');
-const url = require('url');
-const util = require('util');
-const Promise = require('bluebird');
-const _ = require('lodash');
-const querystring = require('querystring');
-const securityHelper = require('../lib/security/security');
-const crypto = require('crypto');
+const restClient = require("superagent-bluebird-promise");
+const path = require("path");
+const url = require("url");
+const util = require("util");
+const Promise = require("bluebird");
+const _ = require("lodash");
+const querystring = require("querystring");
+const securityHelper = require("../lib/security/security");
+const crypto = require("crypto");
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 
 // ####################
 // Setup Configuration
@@ -34,28 +33,25 @@ var _entityApiUrl = process.env.EDH_API_ENTITY;
 
 // Requested attributes
 
-var _attributes = "basic-profile"
+var _attributes = "basic-profile";
 // var _attributes = "entitytype,basic-profile,addresses,history,financials,capitals,declarations,charges,shareholders,appointments,licences,grants"
 
-
-
-
 /* GET home page. */
-router.get('/', function(req, res, next) {
-  res.sendFile(path.join(__dirname + '/../views/html/index.html'));
+router.get("/", function (req, res, next) {
+  res.sendFile(path.join(__dirname + "/../views/html/index.html"));
 });
 
 // callback function - directs back to home page
-router.get('/callback', function(req, res, next) {
-  res.sendFile(path.join(__dirname + '/../views/html/index.html'));
+router.get("/callback", function (req, res, next) {
+  res.sendFile(path.join(__dirname + "/../views/html/index.html"));
 });
 
 // function for getting environment variables to the frontend
-router.get('/getEnv', function(req, res, next) {
+router.get("/getEnv", function (req, res, next) {
   if (_clientId == undefined || _clientId == null)
     res.jsonp({
       status: "ERROR",
-      msg: "client_id not found"
+      msg: "client_id not found",
     });
   else
     res.jsonp({
@@ -63,12 +59,12 @@ router.get('/getEnv', function(req, res, next) {
       clientId: _clientId,
       redirectUrl: _redirectUrl,
       attributes: _attributes,
-      authLevel: _authLevel
+      authLevel: _authLevel,
     });
 });
 
 // function for frontend to call backend
-router.post('/getEntityData', function(req, res, next) {
+router.post("/getEntityData", function (req, res, next) {
   // get variables from frontend
   var uen = req.body.uen;
   console.log("uen:" + uen);
@@ -76,7 +72,6 @@ router.post('/getEntityData', function(req, res, next) {
 });
 
 function callEntityAPI(uen, res) {
-
   console.log("uen:".blue + uen);
 
   // **** CALL ENTITY API ****
@@ -84,87 +79,86 @@ function callEntityAPI(uen, res) {
   var request = createEntityRequest(uen);
 
   // Invoke asynchronous call
-  request
-    .buffer(true)
-    .end(function(callErr, callRes) {
-      if (callErr) {
-        console.log("Error from Entity API:".red);
-        console.log(callErr.status);
-        console.log(callErr.response);
+  request.buffer(true).end(function (callErr, callRes) {
+    if (callErr) {
+      console.log("Error from Entity API:".red);
+      console.log(callErr.status);
+      console.log(callErr.response);
+      res.jsonp({
+        status: "ERROR",
+        msg: callErr,
+      });
+    } else {
+      // SUCCESSFUL
+      var data = {
+        body: callRes.body,
+        text: callRes.text,
+      };
+
+      var entityData = data.text;
+      if (entityData == undefined || entityData == null) {
         res.jsonp({
           status: "ERROR",
-          msg: callErr
+          msg: "ENTITY DATA NOT FOUND",
         });
       } else {
-        // SUCCESSFUL
-        var data = {
-          body: callRes.body,
-          text: callRes.text
-        };
+        if (_authLevel == "L0") {
+          entityData = JSON.parse(entityData);
 
-        var entityData = data.text;
-        if (entityData == undefined || entityData == null) {
+          console.log("Entity Data :".green);
+          console.log(JSON.stringify(entityData));
+          // successful. return data back to frontend
           res.jsonp({
-            status: "ERROR",
-            msg: "ENTITY DATA NOT FOUND"
+            status: "OK",
+            text: entityData,
           });
-        } else {
-          if (_authLevel == "L0") {
-            entityData = JSON.parse(entityData);
+        } else if (_authLevel == "L2") {
+          console.log("Response from Entity API:".green);
+          console.log(entityData);
+          // header.encryptedKey.iv.ciphertext.tag
 
-            console.log("Entity Data :".green);
-            console.log(JSON.stringify(entityData));
-            // successful. return data back to frontend
-            res.jsonp({
-              status: "OK",
-              text: entityData
-            });
-
-          } else if (_authLevel == "L2") {
-            console.log("Response from Entity API:".green);
-            console.log(entityData);
-            // header.encryptedKey.iv.ciphertext.tag
-            var jweParts = entityData.split(".");
-
-            securityHelper.decryptJWE(jweParts[0], jweParts[1], jweParts[2], jweParts[3], jweParts[4], _privateKeyContent)
-              .then(entityData => {
-                if (entityData == undefined || entityData == null)
-                  res.jsonp({
-                    status: "ERROR",
-                    msg: "INVALID DATA OR SIGNATURE FOR ENTITY DATA"
-                  });
-
-                  console.log("Entity Data (JWS):".green);
-                  console.log(JSON.stringify(entityData));
-
-                  var decodedEntityData = securityHelper.verifyJWS(entityData, _publicCertContent);
-                  
-                if (decodedEntityData == undefined || decodedEntityData == null) {
-                  res.jsonp({
-                    status: "ERROR",
-                    msg: "INVALID DATA OR SIGNATURE FOR ENTITY DATA"
-                  })
-                }
-
-                console.log("Entity Data (Decoded):".green);
-                console.log(JSON.stringify(decodedEntityData));
-                // successful. return data back to frontend
-
+          securityHelper
+            .decryptJWE(entityData, _privateKeyContent)
+            .then(async (entityData) => {
+              if (entityData == undefined || entityData == null)
                 res.jsonp({
-                  status: "OK",
-                  text: decodedEntityData
+                  status: "ERROR",
+                  msg: "INVALID DATA OR SIGNATURE FOR ENTITY DATA",
                 });
-              })
-              .catch(error => {
-                console.error("Error with decrypting JWE: %s".red, error);
-              })
-          } else {
-            throw new Error("Unknown Auth Level");
-          }
-        } // end else
-      }
-    }); // end asynchronous call
 
+              console.log("Entity Data (JWS):".green);
+              console.log(JSON.stringify(entityData));
+
+              var decodedEntityData = await securityHelper.verifyJWS(
+                entityData,
+                _publicCertContent
+              );
+              console.log("decode entity".green, decodedEntityData);
+              if (decodedEntityData == undefined || decodedEntityData == null) {
+                res.jsonp({
+                  status: "ERROR",
+                  msg: "INVALID DATA OR SIGNATURE FOR ENTITY DATA",
+                });
+              }
+
+              console.log("Entity Data (Decoded):".green);
+              console.log(JSON.stringify(decodedEntityData));
+              // successful. return data back to frontend
+
+              res.jsonp({
+                status: "OK",
+                text: decodedEntityData,
+              });
+            })
+            .catch((error) => {
+              console.error("Error with decrypting JWE: %s".red, error);
+            });
+        } else {
+          throw new Error("Unknown Auth Level");
+        }
+      } // end else
+    }
+  }); // end asynchronous call
 }
 
 // function to prepare request for ENTITY API
@@ -177,8 +171,7 @@ function createEntityRequest(uen) {
   var method = "GET";
   var request = null;
   // assemble params for Entity API
-  var strParams = "client_id=" + _clientId +
-    "&attributes=" + _attributes;
+  var strParams = "client_id=" + _clientId + "&attributes=" + _attributes;
   var params = querystring.parse(strParams);
 
   // assemble headers for Entity API
@@ -196,7 +189,7 @@ function createEntityRequest(uen) {
     _clientId,
     _privateKeyContent
   );
-console.log('AuthHeaders'.green, authHeaders)
+  console.log("AuthHeaders".green, authHeaders);
   if (!_.isEmpty(authHeaders)) {
     _.set(headers, "Authorization", authHeaders);
   }
@@ -208,12 +201,10 @@ console.log('AuthHeaders'.green, authHeaders)
   var request = restClient.get(url);
 
   // Set headers
-  if (!_.isUndefined(headers) && !_.isEmpty(headers))
-    request.set(headers);
+  if (!_.isUndefined(headers) && !_.isEmpty(headers)) request.set(headers);
 
   // Set Params
-  if (!_.isUndefined(params) && !_.isEmpty(params))
-    request.query(params);
+  if (!_.isUndefined(params) && !_.isEmpty(params)) request.query(params);
   console.log("Sending Entity Request >>>".green);
   return request;
 }
